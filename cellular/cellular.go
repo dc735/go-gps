@@ -3,14 +3,20 @@ package main
 import (
 	"fmt"
 	"log"
+	"bufio"
+    "os"
 	"strings"
 //        "net"
 )
 
 import (
-        "github.com/ozym/zone"
+        "github.com/zone"
 )
-
+func check(e error) {
+    if e != nil {
+        panic(e)
+    }
+}
 func main() {
 
         // default geonet connection ....
@@ -25,35 +31,30 @@ func main() {
         if err != nil {
                 log.Fatal(err)
         }
-//        for _, e := range list {
-//               log.Println(e)
-//        }
-
         // all Trimbles ...
-        fmt.Println("--- Trimble ---")
+//        fmt.Println("--- Trimble ---")
         list, err = z.MatchByModel("^Hongdian")
         if err != nil {
                 log.Fatal(err)
         }
+    	fn, err := os.Create("cellular-noconn.cfg")
+    	check(err)
+		defer fn.Close()
+    	f, err := os.Create("cellular-conn.cfg")
+    	check(err)
+		defer f.Close()
         for _, e := range list {
-//                fmt.Println(e)
-//				fmt.Println(e.Name)
-//				fmt.Println(e.Place)
 				s := (strings.Replace(e.Place, " ", "-", -1))
-//				fmt.Println(e.IP,"\n")
 				fmt.Printf("%s %s #\n", e.IP, s)
+				w := bufio.NewWriter(f)
+				o := fmt.Sprintf("%s %s #\n", e.IP, s)
+				_, err := w.WriteString(o)
+				check(err)
+				w.Flush()
+				w = bufio.NewWriter(fn)
+				o = fmt.Sprintf("%s %s # noconn\n", e.IP, s)
+				_, err = w.WriteString(o)
+				check(err)
+				w.Flush()
         }
-/*
-        log.Println("--- Dump gps-waihorastation.wan.geonet.org.nz. ---")
-        if d != nil {
-                log.Printf("Name: %s\n", d.Name)
-                log.Printf("Place: %s\n", d.Place)
-                log.Printf("IP: %s\n", d.IP)
-                log.Printf("Model: %s\n", d.Model)
-                log.Printf("Code: %s\n", d.Code)
-                log.Printf("Latitude: %g\n", d.Latitude)
-                log.Printf("Longitude: %g\n", d.Longitude)
-                log.Printf("Height: %g\n", d.Height)
-        }
-*/
 }
