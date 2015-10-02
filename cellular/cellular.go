@@ -6,7 +6,6 @@ import (
 	"bufio"
     "os"
 	"strings"
-//        "net"
 )
 
 import (
@@ -31,8 +30,7 @@ func main() {
         if err != nil {
                 log.Fatal(err)
         }
-        // all Trimbles ...
-//        fmt.Println("--- Trimble ---")
+        // all Hongdian Cellular Modem's
         list, err = z.MatchByModel("^Hongdian")
         if err != nil {
                 log.Fatal(err)
