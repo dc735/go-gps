@@ -17,21 +17,14 @@ func check(e error) {
     }
 }
 func main() {
-
-
-file, err := os.Open("/home/davec/go/src/github.com/go-gps/delta-ng/DELTA_MARK.csv")
-if err != nil {
-    log.Fatal(err)
-}
-defer file.Close()
-
-scanner := bufio.NewScanner(file)
-for scanner.Scan() {
-//    fmt.Println(scanner.Text())
-	result := strings.Split(scanner.Text(), ",")
-//    for i := range result {
-//		fmt.Println(result[i])
-//    }
+	file, err := os.Open("/home/davec/go/src/github.com/go-gps/delta-ng/DELTA_MARK.csv")
+	if err != nil {
+	    log.Fatal(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		result := strings.Split(scanner.Text(), ",")
 		var fn = "/home/davec/go/src/github.com/go-gps/delta-ng/sites/"+strings.ToLower(result[0])+".toml"
 		var f, err = os.Create(fn)
     	check(err)
@@ -41,7 +34,7 @@ for scanner.Scan() {
 		_, err = w.WriteString(o)
 		check(err)
 		w.Flush()
-}
+	}
 	if err := scanner.Err(); err != nil {
     	log.Fatal(err)
 	}
