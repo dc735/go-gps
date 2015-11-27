@@ -40,15 +40,15 @@ func main() {
 	flag.Parse()
 
 	// load network details into a map ...
-	netmap := make(map[string]meta.Network)
+	antennamap := make(map[string]meta.InstalledAntenna)
 	{
-		var nets meta.Networks
-		if err := meta.LoadList(filepath.Join(data, "networks.csv"), &nets); err != nil {
+		var antennas meta.InstalledAntennas
+		if err := meta.LoadList(filepath.Join(data, "antennas/trimble/installs.csv"), &antennas); err != nil {
 			panic(err)
 		}
 
-		for _, n := range nets {
-			netmap[n.Code] = n
+		for _, n := range antennas {
+			antennamap[n.Mark] = n
 		}
 	}
 	//fmt.Println(netmap)
@@ -80,10 +80,11 @@ func main() {
 		if !ok {
 			panic("invalid mark key: " + k)
 		}
-/*		{
-			n, ok := netmap[v.Network]
+		if v.Code == site {
+		{
+			n, ok := antennamap[v.Code]
 			if !ok {
-				panic("unable to find network: " + v.Network)
+				panic("unable to find network: " + v.Code)
 			}
 			j, err := json.MarshalIndent(n, "", "  ")
 			if err != nil {
@@ -91,9 +92,8 @@ func main() {
 			}
 			fmt.Println(string(j))
 		}
-*/
 //		fmt.Println(v.Code)
-		if v.Code == site {
+
 			j, err := json.MarshalIndent(v, "", "  ")
 			if err != nil {
 				panic(err)
