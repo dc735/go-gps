@@ -1,61 +1,105 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"encoding/json"
 	"flag"
-    "github.com/zone"
-	"strings"
-//		"bufio" 
-//  	"net/http"
-//		"net"
-//  	"io/ioutil"
-//	"github.com/delta/meta"
-
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"github.com/delta/meta"
+//	"bytes"
 )
-//var stn string
-//func init(){
-//}
 
-func file_extension(fx *string){
-	*fx = ".xml"
-}
-//func mark(m meta.Marks, s *meta.Stations) bool {
-//	err := store(m, s)
-//	if err != nil {
-//		log.Fatal(err)
-//	return ok
-//	}	
-//}
 func main() {
-	stnCode := flag.String("stn", "TEST", "Enter a stataion code")
+
+	var verbose bool
+	flag.BoolVar(&verbose, "verbose", false, "make noise")
+
+	var data string
+	flag.StringVar(&data, "data", "/home/davec/go/src/github.com/delta/data", "base data directory")
+
+	var site string
+	flag.StringVar(&site, "site", "TEST", "base site code")
+
+	
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "An example program to examine ...\n")
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "Usage:\n")
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  %s [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		fmt.Fprintf(os.Stderr, "\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n")
+	}
+
 	flag.Parse()
-	//	fmt.Println("Station input is:", *stnCode)
-	_, stn := fmt.Printf(strings.ToUpper(*stnCode)) 
-//	fp := "/home/gpsin/sites/"
-//	fn := "akto.xml"
-//	_, stnx := fmt.Printf(strings.ToLower(sN))
-//	_ = f(fp+fn)
-	fmt.Println(stn)
-//	fmt.Println(Mark.ID)
 
-        // default geonet connection ....
-        z := zone.Equipment{
-                Zone:   "wan.geonet.org.nz.",
-                Server: "rhubarb.geonet.org.nz",
-                Port:   "53",
-        }
+	// load network details into a map ...
+	netmap := make(map[string]meta.Network)
+	{
+		var nets meta.Networks
+		if err := meta.LoadList(filepath.Join(data, "networks.csv"), &nets); err != nil {
+			panic(err)
+		}
 
-        // get all equipment ...
-        list, err := z.List()
-        if err != nil {
-                log.Fatal(err)
-        }
-        // all Trimble NetR9's
-        list, err = z.MatchByModelAndCode("^Trimble NetR9",*stnCode)
-        if err != nil {
-                log.Fatal(err)
-        }
-		fmt.Println(list)	
+		for _, n := range nets {
+			netmap[n.Code] = n
+		}
+	}
+	//fmt.Println(netmap)
+
+	// load station details
+	markmap := make(map[string]meta.Mark)
+	{
+		var marks meta.Marks
+		if err := meta.LoadList(filepath.Join(data, "marks.csv"), &marks); err != nil {
+			panic(err)
+		}
+
+		for _, m := range marks {
+			markmap[m.Code] = m
+		}
+	}
+	//fmt.Println(netmap)
+
+	// sort the keys on output
+	var keys []string
+	for k, _ := range markmap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// a simple loop and print
+	for _, k := range keys {
+		v, ok := markmap[k]
+		if !ok {
+			panic("invalid mark key: " + k)
+		}
+/*		{
+			n, ok := netmap[v.Network]
+			if !ok {
+				panic("unable to find network: " + v.Network)
+			}
+			j, err := json.MarshalIndent(n, "", "  ")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(j))
+		}
+*/
+//		fmt.Println(v.Code)
+		if v.Code == site {
+			j, err := json.MarshalIndent(v, "", "  ")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(j))
+		}
+	}
 
 }
