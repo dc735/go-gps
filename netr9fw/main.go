@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 	"github.com/delta/meta"
+	"github.com/zone"
+	"log"
 //	"bytes"
 )
 
@@ -36,10 +38,8 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
 	}
-
 	flag.Parse()
-
-	// load network details into a map ...
+	// load antenna details into a map ...
 	antennamap := make(map[string]meta.InstalledAntenna)
 	{
 		var antennas meta.InstalledAntennas
@@ -51,8 +51,6 @@ func main() {
 			antennamap[n.Mark] = n
 		}
 	}
-	//fmt.Println(netmap)
-
 	// load station details
 	markmap := make(map[string]meta.Mark)
 	{
@@ -66,14 +64,40 @@ func main() {
 		}
 	}
 	//fmt.Println(netmap)
-
+///////////////////////////////////////////////////////
+	// sort the akeys on output
+	var akeys []string
+	for k, _ := range antennamap {
+		akeys = append(akeys, k)
+	}
+	sort.Strings(akeys)
+	// a simple loop and print
+	for _, k := range akeys {
+		v, ok := antennamap[k]
+		if !ok {
+			panic("invalid mark key: " + k)
+		}
+		if v.Mark == site {
+			{
+			n, ok := antennamap[v.Mark]
+			if !ok {
+				panic("unable to find network: " + v.Mark)
+			}
+			j, err := json.MarshalIndent(n, "", "  ")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(j))
+			}
+		}
+	}
+////////////////////////////////////////////////////////
 	// sort the keys on output
 	var keys []string
 	for k, _ := range markmap {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-
 	// a simple loop and print
 	for _, k := range keys {
 		v, ok := markmap[k]
@@ -81,19 +105,6 @@ func main() {
 			panic("invalid mark key: " + k)
 		}
 		if v.Code == site {
-		{
-			n, ok := antennamap[v.Code]
-			if !ok {
-				panic("unable to find network: " + v.Code)
-			}
-			j, err := json.MarshalIndent(n, "", "  ")
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println(string(j))
-		}
-//		fmt.Println(v.Code)
-
 			j, err := json.MarshalIndent(v, "", "  ")
 			if err != nil {
 				panic(err)
@@ -101,5 +112,28 @@ func main() {
 			fmt.Println(string(j))
 		}
 	}
+//###############
+        // default geonet connection ....
+        z := zone.Equipment{
+                Zone:   "wan.geonet.org.nz.",
+                Server: "rhubarb.geonet.org.nz",
+                Port:   "53",
+        }
+
+        // get all equipment ...
+        list, err := z.List()
+        if err != nil {
+                log.Fatal(err)
+        }
+        // all Trimble NetR9's
+        list, err = z.MatchByModelAndCode("^Trimble",site)
+        if err != nil {
+                log.Fatal(err)
+        }
+		for _, e := range list {
+            log.Println(e)
+        }
+//###############
+
 
 }
