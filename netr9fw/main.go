@@ -10,8 +10,51 @@ import (
 	"github.com/delta/meta"
 	"github.com/zone"
 	"log"
+    "io/ioutil"
+	"net/http"
+	"net"	
+	"strings"
 //	"bytes"
 )
+
+//type Fw interface {
+//    Firmware() string
+//}
+//type FirmwareVersion struct {
+//	FirmWare	string		`json:"FirmwareVersion"`      // 
+//	Version     string      `json:"version"`        // 
+//	Date 	    string      `json:"date"`   //
+//}
+//func (f FirmwareVersion) Firmware() string {
+//	return "6000"
+//}
+
+func gv(ip net.IP) string {
+	response, err := http.Get("http://admin:cuseeme@"+ip.String()+"/prog/Show?FirmwareVersion")
+    if err != nil {
+		return ""
+    } else {
+        defer response.Body.Close()
+        contents, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+			return ""
+        }
+		result := strings.Split(string(contents),"\n")
+	    for i := range result {
+			str := "version="
+//			if strings.Contains(result[i],str) {
+				x := strings.Split(result[i], " ")
+				for j := range x {
+//					str := "volts="
+					if strings.Contains(x[j],str) {
+					return string(x[j])
+					}
+				}
+			}
+		}
+return ""
+}
+
 
 func main() {
 
@@ -91,7 +134,7 @@ func main() {
 			}
 		}
 	}
-////////////////////////////////////////////////////////
+/////_///////////////////////////////////////////////////
 	// sort the keys on output
 	var keys []string
 	for k, _ := range markmap {
@@ -131,7 +174,9 @@ func main() {
                 log.Fatal(err)
         }
 		for _, e := range list {
-            log.Println(e)
+		fw := gv(e.IP)
+		fmt.Println(fw)
+		fmt.Println(e.IP)
         }
 //###############
 
