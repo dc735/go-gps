@@ -8,65 +8,32 @@ import (
 	"path/filepath"
 	"sort"
 	"github.com/delta/meta"
-	"github.com/zone"
-	"log"
-    "io/ioutil"
-	"net/http"
-	"net"	
+//    "io/ioutil"
+//	"net/http"
+//	"net"	
 	"strings"
-//	"bytes"
+	"time"
+	"github.com/go-gps/commands"
+	"sync"
 )
-
-//type Fw interface {
-//    Firmware() string
-//}
-//type FirmwareVersion struct {
-//	FirmWare	string		`json:"FirmwareVersion"`      // 
-//	Version     string      `json:"version"`        // 
-//	Date 	    string      `json:"date"`   //
-//}
-//func (f FirmwareVersion) Firmware() string {
-//	return "6000"
-//}
-
-func gv(ip net.IP) string {
-	response, err := http.Get("http://admin:cuseeme@"+ip.String()+"/prog/Show?FirmwareVersion")
-    if err != nil {
-		return ""
-    } else {
-        defer response.Body.Close()
-        contents, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-			return ""
-        }
-		result := strings.Split(string(contents),"\n")
-	    for i := range result {
-			str := "version="
-//			if strings.Contains(result[i],str) {
-				x := strings.Split(result[i], " ")
-				for j := range x {
-//					str := "volts="
-					if strings.Contains(x[j],str) {
-					return string(x[j])
-					}
-				}
-			}
-		}
-return ""
-}
-
+var Admin = "http://admin:cuseeme@"
+var FwVersion = "/prog/Show?FirmwareVersion"
+var FwInstall = "/prog/Upload?FirmwareFile"
+var CloneInstall = "/cgi-bin/clone_fileUpload.html"
+var CloneFile = "/home/davec/GNS_NETR9_5.10.xml"
+var FirmwareFile = "/home/davec/NetR9_V5.10.timg"
 
 func main() {
-
+	var wg sync.WaitGroup
+	wg.Add(2)
 	var verbose bool
 	flag.BoolVar(&verbose, "verbose", false, "make noise")
-
 	var data string
 	flag.StringVar(&data, "data", "/home/davec/go/src/github.com/delta/data", "base data directory")
-
 	var site string
 	flag.StringVar(&site, "site", "TEST", "base site code")
-
+	var test bool
+	flag.BoolVar(&test, "test", true, "Are we just testing")
 	
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "\n")
@@ -82,6 +49,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 	flag.Parse()
+	site = strings.ToUpper(site)
 	// load antenna details into a map ...
 	antennamap := make(map[string]meta.InstalledAntenna)
 	{
@@ -106,7 +74,6 @@ func main() {
 			markmap[m.Code] = m
 		}
 	}
-	//fmt.Println(netmap)
 ///////////////////////////////////////////////////////
 	// sort the akeys on output
 	var akeys []string
@@ -134,7 +101,6 @@ func main() {
 			}
 		}
 	}
-/////_///////////////////////////////////////////////////
 	// sort the keys on output
 	var keys []string
 	for k, _ := range markmap {
@@ -155,30 +121,47 @@ func main() {
 			fmt.Println(string(j))
 		}
 	}
-//###############
-        // default geonet connection ....
-        z := zone.Equipment{
-                Zone:   "wan.geonet.org.nz.",
-                Server: "rhubarb.geonet.org.nz",
-                Port:   "53",
-        }
-
-        // get all equipment ...
-        list, err := z.List()
-        if err != nil {
-                log.Fatal(err)
-        }
-        // all Trimble NetR9's
-        list, err = z.MatchByModelAndCode("^Trimble",site)
-        if err != nil {
-                log.Fatal(err)
-        }
-		for _, e := range list {
-		fw := gv(e.IP)
-		fmt.Println(fw)
-		fmt.Println(e.IP)
-        }
-//###############
-
-
+/////_///////////////////////////////////////////////////
+		SiteIP := commands.FindIP(site)
+		fmt.Println(SiteIP.String())
+		fmt.Println(site)
+		var Rip = "10.100.59.150"
+//#####
+if test == false {
+	go func() {
+		for i := 0; i < 360; i++ {
+			s := commands.Status(Admin+Rip)
+			fmt.Println(s)
+			time.Sleep(time.Second * 5)
+			if i > 5 {
+				if strings.Contains(s,"Done") { break }	
+			}
+		}
+//	fmt.Println("We Gave up")
+	wg.Done()
+	}()
+	go func() {
+		c := commands.Upload(Admin+Rip+FwInstall,FirmwareFile)
+		fmt.Println(c)
+		wg.Done()
+		}()
+		// Wait for the goroutines to finish.
+		fmt.Println("Waiting For Upgrade To Finish")
+	wg.Wait()
+	}
+//	fmt.Println("Installing Clone File")
+//	c := commands.Upload(Admin+Rip+CloneInstall,CloneFile)
+//  fmt.Println(c)
 }
+/*	
+	//	s := commands.FindStatus("http://admin:cuseeme@10.100.59.151")
+	//	c := commands.Upload("http://admin:cuseeme@10.100.59.151/cgi-bin/clone_fileUpload.html","/home/davec/GNS_NETR9_5.10.xml")
+		c := commands.Upload("http://admin:cuseeme@10.100.59.151/prog/Upload?FirmwareFile","/home/davec/NetR9_V5.10.timg")
+			for i := 0; i < 100; i++ {
+				s := commands.FindStatus("http://admin:cuseeme@10.100.59.151")
+				fmt.Println(s)
+				time.Sleep(time.Second * 1)
+			}
+			fmt.Println(c)
+			fmt.Println(e.IP)
+*/
