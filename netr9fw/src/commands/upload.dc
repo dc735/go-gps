@@ -1,0 +1,39 @@
+package commands
+
+import (
+	"io"
+	"net/http"
+    "io/ioutil"
+	"bufio"
+	"os"
+	"log"
+)
+
+
+//type Status struct {
+//	State string
+//}
+
+
+
+func UploadClone(server string) (state string) {
+	file, err := os.Open("GNS_NETR9_5.10.xml")
+	if err != nil {
+	    log.Fatal(err)
+	}
+	defer file.Close()
+	buf := io.ReadFull("GNS_NETR9_5.10.xml")
+//	buf := bufio.NewScanner(file)
+	response, err := http.Post(server,"xml", &buf)
+    if err != nil {
+		return ""
+    } else {
+        defer response.Body.Close()
+        contents, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+			return ""
+        }
+		//result := strings.Split(string(contents),"\n")
+	return string(contents)
+	}
+}

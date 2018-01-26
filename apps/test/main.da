@@ -1,0 +1,66 @@
+package main
+
+import (
+	"bufio"
+	"encoding/csv"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"strings"
+	//	"sync"
+	//	"time"
+)
+
+func main() {
+	//var ip []string
+	file, err := os.Open("/home/davec/git/sit/data/access.csv")
+	if err != nil {
+		log.Println("File not found")
+		log.Fatal(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		ip: = append(ip, scanner.Text())
+  }
+}
+//  	r := csv.NewReader(strings.NewReader(ip))
+//
+//		record, err := r.Read()
+//		if err == io.EOF {
+//			break
+//		}
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+
+//		fmt.Println(record)
+
+	/*
+		for _, y := range ip {
+			fmt.Printf("ip = %s -> ", y)
+			continue //os.Exit(1)
+		}*/
+//}
+
+/*
+import (
+	"log"
+
+	"github.com/datadog-go/statsd"
+)
+
+func main() {
+	c, err := statsd.New("127.0.0.1:8125")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// prefix every metric with the app name
+	c.Namespace = "."
+	// send the EC2 availability zone as a tag with every metric
+	c.Tags = append(c.Tags, "us-east-1a")
+	err = c.Gauge("request.duration", 1.2, nil, 1)
+	// ...
+}
+*/
